@@ -116,8 +116,14 @@ void cameraProcess(int posX, int posY, int time)
       }
     else
       {
-      puckSpeedXAverage = (puckSpeedX + puckOldSpeedX)>>1;
-      puckSpeedYAverage = (puckSpeedY + puckOldSpeedY)>>1;
+      if (myAbs(puckSpeedX - puckOldSpeedX)<50)
+        puckSpeedXAverage = (puckSpeedX + puckOldSpeedX)>>1;
+      else
+        puckSpeedXAverage = puckSpeedX;
+      if (myAbs(puckSpeedY - puckOldSpeedY)<50)
+        puckSpeedYAverage = (puckSpeedY + puckOldSpeedY)>>1;
+      else
+        puckSpeedYAverage = puckSpeedY;
       } 
 
   //puckSpeed = sqrt(vectorX*vectorX + vectorY*vectorY)*1000.0/time;
@@ -151,6 +157,8 @@ void cameraProcess(int posX, int posY, int time)
     if ((predict_x<38)||(predict_x>562))
     {
       predict_status = 2;
+      predict_bounce = 1;
+      predict_bounce_status = 1;
       // We start a new prediction
       // Wich side?
       if (predict_x<38)
@@ -180,49 +188,48 @@ void cameraProcess(int posX, int posY, int time)
       }
       else
       {
-        // average of the results (some noise filtering)
-        if (predict_x_old != -1)
-          predict_x = (predict_x_old + predict_x)>>1;
-        predict_x_old = predict_x;
-        predict_time = predict_time + (predict_y-puckCoordY)*100L/puckSpeedY;  // in ms
+        // one side bounce
+        // If the puckSpeedY has changed a lot this mean that the puck has touch one side
+        if (myAbs(puckSpeedY - puckOldSpeedY) > 50)
+          {
+          // We dont make a new prediction...
+          }
+        else
+          {
+          // average of the results (some noise filtering)
+          if (predict_x_old != -1)
+            predict_x = (predict_x_old + predict_x)>>1;
+          predict_x_old = predict_x;
+          // We introduce a factor (130 instead of 100) to model the bounce (30% loss in speed)(to improcve...)
+          predict_time = predict_time + (predict_y-puckCoordY)*130L/puckSpeedY;  // in ms
+          }
       }
     }
     else  // No bounce, direct impact
     {
-      // average of the results (some noise filtering)
-      if (predict_x_old != -1)
-        predict_x = (predict_x_old + predict_x)>>1;
-      predict_x_old = predict_x;
+      if (predict_bounce_status == 1)  // This is the first direct impact trajectory after a bounce
+        {
+        // We dont predict nothing new...
+        predict_bounce_status = 0;
+        }
+      else
+        {
+        // average of the results (some noise filtering)
+        if (predict_x_old != -1)
+          predict_x = (predict_x_old + predict_x)>>1;
+        predict_x_old = predict_x;
 
-      predict_time = (predict_y-puckCoordY)*100L/puckSpeedY;  // in ms
-      predict_time_attack = (attack_position-puckCoordY)*100L/puckSpeedY; // in ms
+        predict_time = (predict_y-puckCoordY)*100L/puckSpeedY;  // in ms
+        predict_time_attack = (attack_position-puckCoordY)*100L/puckSpeedY; // in ms
+        }
     }
   }
   else // Puck is moving slowly or to the other side
   {	
     predict_x_old = -1;
     predict_status = 0;
-    // we are going to make some predictions if the robot wants to start an attack
-    // we are going to predict the position of the puck in 500ms
-    //predict_time = 500;
-    // Update average speed on each axis
-    /*
-    if (puckOldSpeedX == -1)
-      {
-      puckSpeedXAverage = puckSpeedX;
-      puckSpeedYAverage = puckSpeedY;
-      }
-    else
-      {
-      puckSpeedXAverage = (puckSpeedX + puckOldSpeedX)>>1;
-      puckSpeedYAverage = (puckSpeedY + puckOldSpeedY)>>1;
-      }
-    */
-    //predict_x = puckCoordX + (long)puckSpeedXAverage*predict_time/100L;
-    //predict_y = puckCoordY + (long)puckSpeedYAverage*predict_time/100L;
-    // Attack is posible? if yes => predict_status=3
-    //if ((puckCoordY < 500)&&(myAbs(puckSpeedY)<50))
-    //  predict_status = 3;
+    predict_bounce = 0;
+    predict_bounce_status = 0;
   }
 }
 

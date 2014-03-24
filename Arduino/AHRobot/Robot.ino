@@ -10,20 +10,43 @@ void newDataStrategy()
     // Default
     robot_status = 0;   // Going to initial position (defense)
     
-    if (predict_status==1)
+    if ((predict_status==1)&&(predict_time<350))
       {
-      if ((predict_x > (ROBOT_MIN_X+40))&&(predict_x < (ROBOT_MAX_X-40))) 
-        robot_status = 2; //2  //Defense+attack mode
+      // WE  come from a bounce?
+      if (predict_bounce == 1)
+        {
+        if ((puckSpeedYAverage)>-150)
+          // puck is moving slowly...
+          robot_status = 2;  // Defense+Attack
+        else
+          {
+          if (predict_x < 200)
+            predict_x = 200;
+          if (predict_x > 400)
+            predict_x = 400;
+          robot_status = 4;
+          }
+        }
       else
-        robot_status = 1; //1
+        {
+        if ((predict_x > (ROBOT_MIN_X+35))&&(predict_x < (ROBOT_MAX_X-35))) 
+          robot_status = 2; //2  //Defense+attack mode
+        else
+          robot_status = 1; //1
+        }
       }
     
-    if (predict_status==2)
+    // Prediction with side bound
+    if ((predict_status==2)&&(predict_time<350))
+      {
       robot_status = 1;  //1   // Defense mode
-  
-    //if (predict_status==3)  // Atack?
-    //  robot_status = 3;
-    
+      // We limit the movement in this phase
+      if (predict_x < 200)
+        predict_x = 200;
+      if (predict_x > 400)
+        predict_x = 400;
+      }
+   
     // If the puck is moving slowly in the robot field we could start an attack
     if ((predict_status==0)&&(puckCoordY < ROBOT_CENTER_Y)&&(myAbs(puckSpeedY)<50))
       robot_status = 3; //3
@@ -51,21 +74,22 @@ void robotStrategy()
         break;
       case 2:
         // Defense+attack
-        if (predict_time_attack<185)  // If time is less than 185ms we start the attack
+        if (predict_time_attack<180)  // If time is less than 180ms we start the attack
           {
           com_pos_y = attack_position + 80;
           com_pos_x = predict_x_attack;
           setSpeedS(com_speed_x,com_speed_y);
-          setPosition(com_pos_x,com_pos_y);
+          setPosition(com_pos_x,com_pos_y); // We use a straight line path
           }
         else      // Defense position
           {
           com_pos_y = predict_y;
-          com_pos_x = predict_x_attack;
+          com_pos_x = predict_x;  // predict_x_attack;
           setSpeedS(com_speed_x,com_speed_y);
           setPosition(com_pos_x,com_pos_y);
           attack_time = 0;
           }
+        
         break;
       case 3:
         // ATTACK MODE
@@ -73,7 +97,7 @@ void robotStrategy()
           {
           attack_predict_x = predictPuckXPosition(500);
           attack_predict_y = predictPuckYPosition(500);
-          if ((attack_predict_x > 120)&&(attack_predict_x < 480)&&(attack_predict_y >200)&&(attack_predict_y<300))
+          if ((attack_predict_x > 120)&&(attack_predict_x < 480)&&(attack_predict_y >180)&&(attack_predict_y<320))
             {
             attack_time = millis() + 500;  // Prepare an attack in 500ms
             attack_pos_x = attack_predict_x;  // predict_x
@@ -133,7 +157,7 @@ void robotStrategy()
             }
           if (attack_status==2)
             {
-            if (millis()>(attack_time+100))  // Attack move is done? => Reset to defense position
+            if (millis()>(attack_time+80))  // Attack move is done? => Reset to defense position
               {
               Serial.print("RESET");
               attack_time = 0;
@@ -142,6 +166,16 @@ void robotStrategy()
               }
             }
           }
+        break;
+      case 4:
+        // The puck came from a bounce
+        // Only defense now (we could improve this in future)
+        // Defense mode (only move on X axis on the defense line)
+        com_pos_y = defense_position;
+        com_pos_x = predict_x;
+        setSpeedS(com_speed_x,com_speed_y);
+        setPosition(com_pos_x,com_pos_y);
+        attack_time = 0;
         break;
       default:
         // Default : go to defense position

@@ -1,11 +1,13 @@
-// AHR AIR HOCKEY ROBOT PROJECT
+// AHR: AIR HOCKEY ROBOT PROJECT
 // Author: Jose Julio (@jjdrones)
 // Hardware: Arduino MEGA + Ramps 1.4
 // Date: 18/11/2013
-// Last updated: 21/01/2014
-// Version: 1.02
-// Project page : Spanish: English:
-// GIT repository: 
+// Last updated: 24/03/2014
+// Version: 1.05
+// Project page : 
+//    Spanish: http://cienciaycacharreo.blogspot.com.es/2014/02/nuevo-proyecto-air-hockey-robot-3d.html 
+//    English: http://cienciaycacharreo.blogspot.com.es/2014/02/new-project-air-hockey-robot-3d-printer.html
+// GIT repository: https://github.com/JJulio/AHRobot
 // License: Open Software GPL License
 
 // ROBOT and USER configuration parameters
@@ -59,7 +61,7 @@ void setup()
   digitalWrite(A8,HIGH);
 
   Serial.begin(115200);
-  Serial.println("AHR Robot version 1.02");
+  Serial.println("AHR Robot version 1.05");
   delay(500);
   Serial.println("Initializing robot...");
   delay(2000);
@@ -163,9 +165,10 @@ void setup()
 
 
   // Enable Air Hockey FANS
-  digitalWrite(9,HIGH);
-  digitalWrite(10,HIGH);
-
+  //digitalWrite(9,HIGH);
+  //digitalWrite(10,HIGH);
+  analogWrite(9,FAN1_SPEED);
+  analogWrite(10,FAN2_SPEED);
 }
 
 // Main loop
@@ -203,53 +206,7 @@ void loop()
       // Robot strategy based on puck prediction
       newDataStrategy();
       
-      /*
-      if (robot_status==3)
-        {
-        Serial.print(attack_time);
-        Serial.print(" ");
-        Serial.print(predict_x);
-        Serial.print(" ");
-        Serial.println(predict_y);
-        }
-      */ 
-      //Serial.print(predict_status);
-      /*
-      Serial.print(" ");
-       Serial.print(puckPixX);
-       Serial.print(" ");
-       Serial.print(puckPixY);
-       Serial.print(" ");
-       Serial.print(puckSize);
-       Serial.print(" ");
-       Serial.println(cam_timestamp);
-       */
-      /*
-      Serial.print(robotCoordX);
-       Serial.print(" ");
-       Serial.println(robotCoordY);
-       */
-      /*
-      Serial.print(puckCoordX);
-       Serial.print(" ");
-       Serial.print(puckCoordY);
-       */
-      /*
-      Serial.print(" ");
-       Serial.print(puckSize);
-       Serial.print(" ");
-       Serial.println(cam_timestamp);
-       */
-      //Serial.print((int)(dt*10));
-
-      /*
-      Serial.print(" ");
-       Serial.print(predict_x);
-       Serial.print(" ");
-       Serial.print(puckSpeedY);
-       Serial.print(" ");
-       Serial.println(predict_time);
-       */
+     
     }  // End packet received
     
     
@@ -269,62 +226,25 @@ void loop()
       Serial.print(" ");
       Serial.println(speed_y);
       }
-    
+    // DEBUG : PUCK POSITION
+    if (loop_counter == 4000)
+      {
+        Serial.print("PUCK POSITION: ");
+        Serial.print(puckCoordX);
+        Serial.print(",");
+        Serial.println(puckCoordY);
+      }
+      
     // DEBUG: We inform of the position error of the robot as seen in the camera (util for calibrations)
-    if (loop_counter == 1000)
+    if (loop_counter == 4002)
       {
         Serial.print("ROBOT ERROR: ");
         Serial.print(robotMissingStepsErrorX);
         Serial.print(",");
         Serial.println(robotMissingStepsErrorY);
       }
+
     
-    if ((loop_counter % 20)==0)
-    {
-      if (robot_status == 3)
-        {
-        //Serial.print(attack_time);
-        //Serial.print(" ");
-        //Serial.print(predict_x);
-        //Serial.print(",");
-        //Serial.println(predict_y);
-        //Serial.print(" ");
-        }
-      //Serial.print(robot_status);
-      //Serial.print(" ");
-      /*
-      Serial.print(target_position_x);
-       Serial.print(" ");
-       Serial.print(target_x_mm);
-       Serial.print(" ");
-       Serial.print(user_speed_x);
-       Serial.print(" ");
-       Serial.print(filt_user_speed_x);
-       Serial.print(" ");
-       */
-      //Serial.print(com_pos_y);
-      //Serial.print(" ");
-      //Serial.print(position_x);
-      //Serial.print(" ");
-      //Serial.print(position_y);
-      //Serial.print(" ");
-      //Serial.println(speed_y);
-      //Serial.print(" ");
-      //Serial.println(max_acceleration_x);
-
-      /*
-      Serial.print(" ");
-       Serial.print(target_position_x);
-       Serial.print(" ");
-       Serial.print(pos_stop_x);
-       Serial.print(" S ");
-       Serial.print(speed_x);
-       Serial.print(" ");
-       Serial.print(target_speed_x);
-       */
-      //Serial.println();
-
-    }
     positionControl();
   } // 1Khz loop
 }

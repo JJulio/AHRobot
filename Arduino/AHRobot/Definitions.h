@@ -80,6 +80,8 @@ int attack_predict_x;
 int attack_predict_y;
 uint8_t attack_status;
 int8_t predict_status;  // 1 Puck is going to goal
+int8_t predict_bounce;  // 1 if puck came from a bounce
+int8_t predict_bounce_status;
 int predict_x;    // X position at impact (mm)
 int predict_y;
 int predict_x_old;
