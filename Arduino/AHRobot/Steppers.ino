@@ -1,6 +1,7 @@
 // AHR AIR HOCKEY ROBOT PROJECT
 
 // STEPPERS MOTOR CONTROL
+// Updated: Now it supports DRV8825 drivers
 // SPEED, ACCELERATION AND POSITION CONTROL using Arduino 16 bit Timer interrupts
 
 // STEPPER MOTOR PINS (SAME AS RAMPS 1.4)
@@ -31,7 +32,19 @@ ISR(TIMER1_COMPA_vect)
   SET(PORTF,0); // STEP X-AXIS
   position_x += dir_x;
   __asm__ __volatile__ (
-  "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
     "nop");  // Wait 2 cycles. With the other instruction and this we ensure a more than 1 microsenconds step pulse
   CLR(PORTF,0);
 }
@@ -45,7 +58,17 @@ ISR(TIMER3_COMPA_vect)
   SET(PORTF,6); // STEP Y-AXIS (Y-left)
   SET(PORTL,3); // STEP Z-AXIS (Y-right)
   position_y += dir_y;
-  // We dont need to wait more, this pulse is around 1.3us (measured with the oscilloscope)
+  __asm__ __volatile__ (
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop");  // Wait 2 cycles. With the other instruction and this we ensure a more than 1 microsenconds step pulse
   CLR(PORTF,6);
   CLR(PORTL,3);
 }
