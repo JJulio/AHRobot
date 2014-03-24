@@ -1,13 +1,14 @@
 // AHR AIR HOCKEY ROBOT PROJECT
 
 // MOTOR TEST X AXIS!
+// Start centered on X and the lowest position of Y
 // If you change some parameter on Configuration.h 
 // remember to copy it to the final project AHRobot.
 
 // Author: Jose Julio (@jjdrones)
 // Hardware: Arduino MEGA + Ramps 1.4
 // Date: 21/01/2014
-// Updated: 
+// Updated: 24/03/2014
 // Version: 1.01
 // Project page : Spanish: English:
 // GIT repository: 
@@ -64,7 +65,7 @@ void setup()
   digitalWrite(A8,HIGH);
 
   Serial.begin(115200);
-  Serial.println("AHR Robot GCODE paint version v1.01");
+  Serial.println("AHR Robot X MOTOR TEST v1.01");
   Serial.println("Initializing robot...");
   Serial.print("Free Memory: ");
   Serial.print(freeRam());
@@ -143,10 +144,11 @@ void setup()
   Serial.println("Moving to initial position...");
   Serial.println("Ready to start test!!");
   delay(1000);
+  Serial.println("Slow speed...");
 
   // Initializing Robot command variables
   com_pos_x = ROBOT_CENTER_X;
-  com_pos_y = ROBOT_MIN_Y;
+  com_pos_y = ROBOT_MIN_Y+25;
   com_speed_x = 2000;
   com_speed_y = 2000;
 

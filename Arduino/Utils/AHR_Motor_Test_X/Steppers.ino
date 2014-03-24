@@ -1,6 +1,7 @@
 // AHR AIR HOCKEY ROBOT PROJECT
 
 // STEPPERS MOTOR CONTROL
+// Updated: Now it supports DRV8825 drivers
 // SPEED, ACCELERATION AND POSITION CONTROL using Arduino 16 bit Timer interrupts
 
 // STEPPER MOTOR PINS (SAME AS RAMPS 1.4)
@@ -31,7 +32,19 @@ ISR(TIMER1_COMPA_vect)
   SET(PORTF,0); // STEP X-AXIS
   position_x += dir_x;
   __asm__ __volatile__ (
-  "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
     "nop");  // Wait 2 cycles. With the other instruction and this we ensure a more than 1 microsenconds step pulse
   CLR(PORTF,0);
 }
@@ -45,7 +58,17 @@ ISR(TIMER3_COMPA_vect)
   SET(PORTF,6); // STEP Y-AXIS (Y-left)
   SET(PORTL,3); // STEP Z-AXIS (Y-right)
   position_y += dir_y;
-  // We dont need to wait more, this pulse is around 1.3us (measured with the oscilloscope)
+  __asm__ __volatile__ (
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop" "\n\t"
+    "nop");  // Wait 2 cycles. With the other instruction and this we ensure a more than 1 microsenconds step pulse
   CLR(PORTF,6);
   CLR(PORTL,3);
 }
@@ -74,18 +97,15 @@ void positionControl()
   micros_old = timer;
 
   // We use an acceleration ramp to imitate an S-curve profile at the begining and end (depend on speed)
-  //acceleration_x = map(abs(speed_x),0,accel_ramp,MIN_ACCEL_X,max_acceleration_x);
-  //acceleration_x = constrain(acceleration_x,MIN_ACCEL_X,max_acceleration_x);
+  acceleration_x = map(abs(speed_x),0,accel_ramp,MIN_ACCEL_X,max_acceleration_x);
+  acceleration_x = constrain(acceleration_x,MIN_ACCEL_X,max_acceleration_x);
 
-  //acceleration_y = map(abs(speed_y),0,accel_ramp,MIN_ACCEL_Y,max_acceleration_y);
-  //acceleration_y = constrain(acceleration_y,MIN_ACCEL_Y,max_acceleration_y);
-  
-  acceleration_x = max_acceleration_x;
-  acceleration_y = max_acceleration_y;
+  acceleration_y = map(abs(speed_y),0,accel_ramp,MIN_ACCEL_Y,max_acceleration_y);
+  acceleration_y = constrain(acceleration_y,MIN_ACCEL_Y,max_acceleration_y);
 
   // X AXIS
   temp = (long)speed_x*speed_x;
-  temp = temp/(1700*(long)acceleration_x);  // 2000*0.85 = 1700 0.85 is a compensation for deceleration ramp (S-curve)
+  temp = temp/(1800*(long)acceleration_x);  // 2000*0.85 = 1700 0.85 is a compensation for deceleration ramp (S-curve)
   pos_stop_x = position_x + sign(speed_x)*temp;
   if (target_position_x>position_x)  // Positive move
   {
@@ -104,7 +124,7 @@ void positionControl()
 
   // Y AXIS
   temp = (long)speed_y*speed_y;
-  temp = temp/(1700*(long)acceleration_y);
+  temp = temp/(1800*(long)acceleration_y);
   pos_stop_y = position_y + sign(speed_y)*temp;
   if (target_position_y>position_y)  // Positive move
   {
@@ -257,6 +277,15 @@ void setMotorYSpeed(int16_t tspeed,int16_t dt)
     TCNT3 = 0;
 }
 
+// Set speed on each axis in steps/sec
+void setSpeedS(int target_sx, int target_sy)
+{
+  target_sx = constrain(target_sx,0,MAX_SPEED_X);
+  target_sy = constrain(target_sy,0,MAX_SPEED_Y);
+  target_speed_x = target_sx;
+  target_speed_y = target_sy;
+}
+
 // set Robot position in mm. 
 // This function check for valid robot positions values
 // Convert from mm units to steps
@@ -268,12 +297,71 @@ void setPosition(int target_x_mm_new, int target_y_mm_new)
   target_position_y = target_y_mm*Y_AXIS_STEPS_PER_UNIT;
 }
 
-// Set speed in steps/sec
-void setSpeedS(int target_sx, int target_sy)
-{
-  target_sx = constrain(target_sx,0,MAX_SPEED_X);
-  target_sy = constrain(target_sy,0,MAX_SPEED_Y);
-  target_speed_x = target_sx;
-  target_speed_y = target_sy;
+// set Robot position in mm. 
+// This function check for valid robot positions values
+// Convert from mm units to steps
+void setPosition_straight(int target_x_mm_new, int target_y_mm_new)
+{ 
+  int old_target_position_x;
+  int old_target_position_y;
+  int diff_x;
+  int diff_y;
+  
+  target_x_mm = constrain(target_x_mm_new,ROBOT_MIN_X,ROBOT_MAX_X);
+  target_y_mm = constrain(target_y_mm_new,ROBOT_MIN_Y,ROBOT_MAX_Y);
+  old_target_position_x = target_position_x;
+  old_target_position_y = target_position_y;
+  target_position_x = target_x_mm*X_AXIS_STEPS_PER_UNIT;
+  target_position_y = target_y_mm*Y_AXIS_STEPS_PER_UNIT;
+  // Speed adjust to draw straight lines
+  diff_x = myAbs(target_position_x - old_target_position_x);
+  diff_y = myAbs(target_position_y - old_target_position_y);
+  if (diff_x > diff_y)  // Wich axis should be slower?
+    {
+    com_speed_x = target_speed_x;
+    com_speed_y = (float)target_speed_y*(float)diff_y/(float)diff_x;
+    setSpeedS(com_speed_x,com_speed_y);
+    }
+  else
+    {
+    com_speed_x = (float)target_speed_x*(float)diff_x/(float)diff_y;
+    com_speed_y = target_speed_y;
+    setSpeedS(com_speed_x,com_speed_y);
+    }
 }
+
+// set Robot position in 1/10 mm. 
+// This function check for valid robot positions values
+// Convert from 1/10 mm units to steps
+// This function moves the robot in a straight line
+void setPosition_mm10_straight(int target_x_mm_new, int target_y_mm_new)
+{ 
+  int old_target_position_x;
+  int old_target_position_y;
+  int diff_x;
+  int diff_y;
+  
+  target_x_mm = constrain(target_x_mm_new,ROBOT_MIN_X*10,ROBOT_MAX_X*10);
+  target_y_mm = constrain(target_y_mm_new,ROBOT_MIN_Y*10,ROBOT_MAX_Y*10);
+  old_target_position_x = target_position_x;
+  old_target_position_y = target_position_y;
+  target_position_x = (float)target_x_mm*X_AXIS_STEPS_PER_UNIT/10.0;
+  target_position_y = (float)target_y_mm*Y_AXIS_STEPS_PER_UNIT/10.0;
+  // Speed adjust to draw straight lines
+  diff_x = myAbs(target_position_x - old_target_position_x);
+  diff_y = myAbs(target_position_y - old_target_position_y);
+  if (diff_x > diff_y)  // Wich axis should be slower?
+    {
+    com_speed_x = target_speed_x;
+    com_speed_y = (float)target_speed_y*(float)diff_y/(float)diff_x;
+    setSpeedS(com_speed_x,com_speed_y);
+    }
+  else
+    {
+    com_speed_x = (float)target_speed_x*(float)diff_x/(float)diff_y;
+    com_speed_y = target_speed_y;
+    setSpeedS(com_speed_x,com_speed_y);
+    }
+}
+
 
