@@ -17,6 +17,19 @@
 #include "Configuration.h"
 #include "Definitions.h"   // Variable definitions
 
+
+void print_values()
+{
+  //Serial.print(com_pos_x);
+  //Serial.print(",");
+  //Serial.print(com_pos_y);
+  //Serial.print(",");
+  //Serial.print(position_x);
+  //Serial.print(",");
+  //Serial.println(position_y);
+  
+}
+
 void setup() 
 { 
   // STEPPER MOTOR PINS (SAME AS RAMPS 1.4)
@@ -64,7 +77,7 @@ void setup()
   digitalWrite(A8,HIGH);
 
   Serial.begin(115200);
-  Serial.println("AHR Robot GCODE paint version v1.01");
+  Serial.println("AHR Robot Motor test v1.01");
   Serial.println("Initializing robot...");
   Serial.print("Free Memory: ");
   Serial.print(freeRam());
@@ -122,7 +135,7 @@ void setup()
 
   //Initializing init position
   position_x = ROBOT_INITIAL_POSITION_X*X_AXIS_STEPS_PER_UNIT;
-  position_y = ROBOT_INITIAL_POSITION_Y*Y_AXIS_STEPS_PER_UNIT;
+  position_y = ROBOT_MIN_Y*Y_AXIS_STEPS_PER_UNIT;
 
   delay(1000);
 
@@ -145,12 +158,13 @@ void setup()
   delay(1000);
 
   // Initializing Robot command variables
-  com_pos_x = ROBOT_CENTER_X;
+  com_pos_x = ROBOT_INITIAL_POSITION_X;
   com_pos_y = ROBOT_MIN_Y;
   com_speed_x = 1000;
   com_speed_y = 1000;
 
   setSpeedS(com_speed_x,com_speed_y);
+  print_values();
   setPosition(com_pos_x,com_pos_y);
 
   timer_old = micros();
@@ -179,20 +193,28 @@ void loop()
     timer_old = timer_value;
     loop_counter++;
     
-    if (loop_counter == 2000)
+    if (loop_counter == 3000)
+      print_values();
+    
+    if (loop_counter == 5000)
       {
       Serial.println("Moving the robot 5cm in X");
+      print_values(); 
       // We move the robot 5cm in X
       com_pos_x += 50;
       setPosition(com_pos_x,com_pos_y);
+      print_values();
       }
       
-    if (loop_counter == 10000)
+    if (loop_counter == 15000)
       {
       Serial.println("Moving the robot 5cm in Y");
       // We move the robot 5cm in X
+      print_values();
+      
       com_pos_y += 50;
       setPosition(com_pos_x,com_pos_y); 
+      print_values(); 
       }
     
     positionControl();
